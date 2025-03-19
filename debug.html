@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spelling Adventure Debug</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div style="max-width: 600px; margin: 20px auto; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h1>Button Test Page</h1>
+        <p>Click the buttons below to test basic functionality:</p>
+        
+        <button id="testBtn1" style="padding: 10px; margin: 5px; background: #6200ea; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Test Button 1
+        </button>
+        
+        <button id="testBtn2" style="padding: 10px; margin: 5px; background: #00bcd4; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Test Button 2
+        </button>
+        
+        <div id="result" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc; min-height: 50px;"></div>
+        
+        <h2>Debugging Tools</h2>
+        <button id="checkDOM" style="padding: 10px; margin: 5px; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Check DOM Loading
+        </button>
+        
+        <button id="goToMain" style="padding: 10px; margin: 5px; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Go To Main App
+        </button>
+    </div>
+
+    <script>
+        console.log('Debug page loaded');
+        
+        document.getElementById('testBtn1').onclick = function() {
+            document.getElementById('result').textContent = 'Test Button 1 clicked at ' + new Date().toLocaleTimeString();
+        };
+        
+        document.getElementById('testBtn2').onclick = function() {
+            document.getElementById('result').textContent = 'Test Button 2 clicked at ' + new Date().toLocaleTimeString();
+        };
+        
+        document.getElementById('checkDOM').onclick = function() {
+            const elements = document.querySelectorAll('*');
+            document.getElementById('result').textContent = `DOM contains ${elements.length} elements`;
+            console.log('DOM elements:', elements);
+        };
+        
+        document.getElementById('goToMain').onclick = function() {
+            window.location.href = 'index.html';
+        };
+        
+        // Check if browser supports basic event handling
+        if (typeof window.addEventListener !== 'function') {
+            document.getElementById('result').textContent = 'WARNING: This browser may not support modern event listeners';
+        }
+    </script>
+</body>
+</html>
