@@ -7,10 +7,28 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Fredoka+One&display=swap" rel="stylesheet">
+    <style>
+        h1, h2, .welcome-banner h2 {
+            font-family: 'Fredoka One', cursive;
+        }
+        .sparkle {
+            position: absolute;
+            pointer-events: none;
+            animation: float 3s infinite alternate;
+            opacity: 0.7;
+        }
+        @keyframes float {
+            0% { transform: translateY(0) rotate(0); }
+            100% { transform: translateY(-10px) rotate(10deg); }
+        }
+    </style>
 </head>
 <body>
     <div class="app-container">
         <header class="app-header">
+            <div class="sparkle" style="top: 10px; left: 10%; font-size: 20px;">✨</div>
+            <div class="sparkle" style="top: 30px; right: 20%; font-size: 24px;">⭐</div>
             <h1><i class="fas fa-book"></i> Spelling Adventure</h1>
             <button id="settingsBtn" class="btn-icon"><i class="fas fa-cog"></i></button>
         </header>
@@ -18,8 +36,10 @@
             <!-- Dashboard -->
             <section id="dashboard" class="app-section active">
                 <div class="welcome-banner">
+                    <div class="sparkle" style="top: -20px; left: 30%; font-size: 28px;">✨</div>
+                    <div class="sparkle" style="top: 10px; right: 25%; font-size: 22px;">🌟</div>
                     <h2>Welcome, Explorer!</h2>
-                    <p class="subtitle">Continue your spelling journey</p>
+                    <p class="subtitle">Continue your magical spelling journey</p>
                 </div>
                 <div id="progress" class="progress-stats">
                     <div class="stat-card">
@@ -37,9 +57,9 @@
                         </div>
                     </div>
                     <div class="stat-card">
-                        <i class="fas fa-medal"></i>
+                        <i class="fas fa-gift"></i>
                         <div class="stat-info">
-                            <span class="stat-label">Badges</span>
+                            <span class="stat-label">Rewards</span>
                             <span id="badges" class="stat-value">None</span>
                         </div>
                     </div>
@@ -72,12 +92,18 @@
                     <button id="startAssessment" class="btn-primary"><i class="fas fa-clipboard-check"></i> Take Assessment</button>
                     <button id="playGame" class="btn-secondary"><i class="fas fa-gamepad"></i> Play Spelling Bee</button>
                     <button id="openGenerator" class="btn-tertiary"><i class="fas fa-magic"></i> Custom Words</button>
+                    <button id="openRewards" class="btn-reward"><i class="fas fa-gift"></i> Rewards Center</button>
                 </div>
             </section>
 
             <!-- Assessment -->
             <section id="assessment" class="app-section hidden">
-                <h2><i class="fas fa-clipboard-check"></i> Spelling Assessment</h2>
+                <div class="section-header">
+                    <h2><i class="fas fa-clipboard-check"></i> Spelling Assessment</h2>
+                    <div class="points-display">
+                        <i class="fas fa-star"></i> <span class="points-value">0</span> points
+                    </div>
+                </div>
                 <div class="card">
                     <p class="instruction">Type the word you hear:</p>
                     <div class="audio-player">
@@ -95,7 +121,12 @@
 
             <!-- Spelling Bee Game -->
             <section id="game" class="app-section hidden">
-                <h2><i class="fas fa-gamepad"></i> Spelling Bee</h2>
+                <div class="section-header">
+                    <h2><i class="fas fa-gamepad"></i> Spelling Bee</h2>
+                    <div class="points-display">
+                        <i class="fas fa-star"></i> <span class="points-value">0</span> points
+                    </div>
+                </div>
                 <div class="card">
                     <p class="instruction">Listen and spell the word:</p>
                     <div class="audio-player">
@@ -114,7 +145,12 @@
 
             <!-- Word Generator - New Section -->
             <section id="wordGenerator" class="app-section hidden">
-                <h2><i class="fas fa-magic"></i> Word Generator</h2>
+                <div class="section-header">
+                    <h2><i class="fas fa-magic"></i> Word Generator</h2>
+                    <div class="points-display">
+                        <i class="fas fa-star"></i> <span class="points-value">0</span> points
+                    </div>
+                </div>
                 <div class="card">
                     <p class="instruction">Enter any word to hear its pronunciation:</p>
                     <div class="input-group">
@@ -135,7 +171,12 @@
 
             <!-- Settings -->
             <section id="settings" class="app-section hidden">
-                <h2><i class="fas fa-cog"></i> Settings</h2>
+                <div class="section-header">
+                    <h2><i class="fas fa-cog"></i> Settings</h2>
+                    <div class="points-display">
+                        <i class="fas fa-star"></i> <span class="points-value">0</span> points
+                    </div>
+                </div>
                 <div class="card settings-card">
                     <div class="setting-option">
                         <label class="switch">
@@ -156,9 +197,28 @@
                 </div>
                 <button class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</button>
             </section>
+            
+            <!-- Rewards Center - New Section -->
+            <section id="rewardsCenter" class="app-section hidden">
+                <h2><i class="fas fa-gift"></i> Rewards Center</h2>
+                <div class="card">
+                    <div class="current-points">
+                        <h3>Your Points: <span id="rewardPoints">0</span></h3>
+                    </div>
+                    <p class="instruction">Collect points by spelling words correctly to earn these rewards!</p>
+                    
+                    <div class="rewards-grid" id="rewardsGrid"></div>
+                    
+                    <div class="reward-info">
+                        <p><i class="fas fa-info-circle"></i> When you have enough points, click on a reward to claim it. 
+                        Show the confirmation screen to your parent to receive your reward!</p>
+                    </div>
+                </div>
+                <button class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</button>
+            </section>
         </main>
         <footer class="app-footer">
-            <p>© 2023 Spelling Adventure | <span class="ai-badge"><i class="fas fa-brain"></i> AI-Powered</span></p>
+            <p>© 2025 Spelling Adventure by SDS-GenAlpha | <span class="ai-badge"><i class="fas fa-brain"></i> AI Powered</span></p>
         </footer>
     </div>
     
@@ -172,11 +232,19 @@
             console.log('Click detected on:', e.target);
         }, false);
     </script>
-    <!-- Load speechService.js first -->
+    <!-- Load services and utilities first -->
     <script src="js/speechService.js"></script>
-    <!-- Load word lists -->
     <script src="js/wordLists.js"></script>
-    <!-- Then load main script -->
-    <script src="script.js"></script>
+
+    <!-- Load application modules in correct order -->
+    <script src="js/core.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/rewards.js"></script>
+    <script src="js/assessment.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/settings.js"></script>
+
+    <!-- Remove the original script.js as it's now split into modules -->
+    <!-- <script src="script.js"></script> -->
 </body>
 </html>
