@@ -44,6 +44,30 @@
                         </div>
                     </div>
                 </div>
+                
+                <div class="level-progress">
+                    <div class="level-progress-label">Progress to next level:</div>
+                    <div class="progress-bar-container">
+                        <div id="levelProgressBar" class="progress-bar" style="width: 0%"></div>
+                    </div>
+                    <div class="level-progress-info">
+                        <span id="currentPoints">0</span> / <span id="nextLevelPoints">100</span> points
+                    </div>
+                </div>
+                
+                <div class="level-selector">
+                    <div class="level-label">Choose Level:</div>
+                    <div class="level-buttons">
+                        <button id="level1Btn" class="level-btn active">Level 1</button>
+                        <button id="level2Btn" class="level-btn">Level 2</button>
+                        <button id="level3Btn" class="level-btn">Level 3</button>
+                    </div>
+                    <p class="level-info">Level 1: Basic Words (3-4 letters)<br>
+                       Level 2: Intermediate Words (4-5 letters)<br>
+                       Level 3: Advanced Words (5+ letters)
+                    </p>
+                </div>
+                
                 <div class="action-buttons">
                     <button id="startAssessment" class="btn-primary"><i class="fas fa-clipboard-check"></i> Take Assessment</button>
                     <button id="playGame" class="btn-secondary"><i class="fas fa-gamepad"></i> Play Spelling Bee</button>

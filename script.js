@@ -6,7 +6,16 @@ let currentLevel = 1;
 let points = 0;
 let badges = [];
 let currentWordIndex = 0;
-// Using the global speechService from speechService.js
+let correctStreak = 0;  // Track consecutive correct answers
+
+// Points configuration
+const pointsConfig = {
+    baseAssessment: 10,    // Base points for assessment
+    baseGame: 15,          // Base points for game
+    levelMultipliers: [1, 1.5, 2],  // Level 1, 2, 3 multipliers
+    levelThresholds: [100, 250, 400],  // Points needed to unlock levels
+    streakBonus: 5        // Bonus for consecutive correct answers
+};
 
 // Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -86,6 +95,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const backButtons = document.querySelectorAll('.btn-back');
     const replayButtons = document.querySelectorAll('.replay-btn');
 
+    // Add level selector buttons
+    const levelButtons = {
+        level1: document.getElementById('level1Btn'),
+        level2: document.getElementById('level2Btn'),
+        level3: document.getElementById('level3Btn')
+    };
+    
     // Print debug info for important buttons
     console.log('Button states:', {
         startAssessment: !!buttons.startAssessment,
@@ -113,10 +129,182 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Calculate points based on level and mode
+    function calculatePoints(isCorrect, isGame) {
+        if (!isCorrect) {
+            correctStreak = 0;
+            return 0;
+        }
+        
+        // Get base points based on mode
+        const basePoints = isGame ? pointsConfig.baseGame : pointsConfig.baseAssessment;
+        
+        // Apply level multiplier (levels are 1-indexed, array is 0-indexed)
+        const multiplier = pointsConfig.levelMultipliers[currentLevel - 1] || 1;
+        
+        // Calculate streak bonus
+        correctStreak++;
+        const streakBonus = correctStreak >= 3 ? pointsConfig.streakBonus : 0;
+        
+        // Calculate total points
+        const earnedPoints = Math.round(basePoints * multiplier + streakBonus);
+        
+        return earnedPoints;
+    }
+
+    // Save progress data to localStorage
+    function saveProgress() {
+        localStorage.setItem('spellingPoints', points);
+        localStorage.setItem('spellingBadges', JSON.stringify(badges));
+        localStorage.setItem('spellingLevel', currentLevel);
+        console.log('Progress saved:', {points, badges, level: currentLevel});
+    }
+
+    // Check if user can advance to next level based on points
+    function checkLevelAdvancement() {
+        if (currentLevel < pointsConfig.levelThresholds.length && 
+            points >= pointsConfig.levelThresholds[currentLevel - 1]) {
+            
+            // Only advance if not already at max level
+            if (currentLevel < 3) {
+                currentLevel++;
+                
+                // Show level up notification
+                const levelUpMsg = `Congratulations! You've reached Level ${currentLevel}!`;
+                showNotification(levelUpMsg, 'success');
+                
+                // Save level progress
+                localStorage.setItem('spellingLevel', currentLevel);
+                
+                // Update word lists for the new level
+                if (window.wordLists) {
+                    assessmentWords = window.wordLists.getAssessmentWordsByLevel(currentLevel);
+                }
+                
+                // Update UI
+                updateLevelUI();
+                updateProgress();
+                
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Show notification
+    function showNotification(message, type = 'info') {
+        // Create notification element if it doesn't exist
+        let notification = document.querySelector('.notification');
+        if (!notification) {
+            notification = document.createElement('div');
+            notification.className = 'notification';
+            document.body.appendChild(notification);
+        }
+        
+        // Set content and type
+        notification.textContent = message;
+        notification.className = `notification ${type}`;
+        
+        // Show notification
+        notification.classList.add('show');
+        
+        // Hide after 3 seconds
+        setTimeout(() => {
+            notification.classList.remove('show');
+        }, 3000);
+    }
+
     function updateProgress() {
         if (progress.level) progress.level.textContent = currentLevel;
         if (progress.points) progress.points.textContent = points;
         if (progress.badges) progress.badges.textContent = badges.length ? badges.join(', ') : 'None';
+        
+        // Update level progress bar
+        const progressBar = document.getElementById('levelProgressBar');
+        const currentPointsElem = document.getElementById('currentPoints');
+        const nextLevelPointsElem = document.getElementById('nextLevelPoints');
+        
+        if (progressBar && currentPointsElem && nextLevelPointsElem) {
+            // Get points needed for next level
+            const nextLevelThreshold = currentLevel < 3 ? pointsConfig.levelThresholds[currentLevel - 1] : Infinity;
+            const prevLevelThreshold = currentLevel > 1 ? pointsConfig.levelThresholds[currentLevel - 2] : 0;
+            
+            // Calculate progress percentage (ensure we start from 0 for each level)
+            const totalPointsInLevel = nextLevelThreshold - prevLevelThreshold;
+            const pointsEarnedInLevel = Math.max(0, points - prevLevelThreshold); // Never show negative points
+            const percentage = Math.min(100, (pointsEarnedInLevel / totalPointsInLevel) * 100);
+            
+            // Update UI
+            progressBar.style.width = `${percentage}%`;
+            currentPointsElem.textContent = pointsEarnedInLevel; // Show points earned in current level
+            nextLevelPointsElem.textContent = totalPointsInLevel;
+            
+            // Animate points if changed
+            progress.points.classList.remove('points-earned');
+            void progress.points.offsetWidth; // Force reflow to restart animation
+            progress.points.classList.add('points-earned');
+        }
+        
+        updateLevelUI();
+        
+        // Save progress to localStorage whenever it's updated
+        saveProgress();
+    }
+
+    // Function to update level UI
+    function updateLevelUI() {
+        // Update the level display
+        if (progress.level) progress.level.textContent = currentLevel;
+        
+        // Update level buttons
+        Object.keys(levelButtons).forEach((key, index) => {
+            if (levelButtons[key]) {
+                if (index + 1 === currentLevel) {
+                    levelButtons[key].classList.add('active');
+                } else {
+                    levelButtons[key].classList.remove('active');
+                }
+            }
+        });
+    }
+    
+    // Handle level button clicks
+    if (levelButtons.level1) {
+        levelButtons.level1.onclick = function(event) {
+            event.preventDefault();
+            changeLevel(1);
+        };
+    }
+    
+    if (levelButtons.level2) {
+        levelButtons.level2.onclick = function(event) {
+            event.preventDefault();
+            changeLevel(2);
+        };
+    }
+    
+    if (levelButtons.level3) {
+        levelButtons.level3.onclick = function(event) {
+            event.preventDefault();
+            changeLevel(3);
+        };
+    }
+    
+    // Function to change levels
+    function changeLevel(level) {
+        currentLevel = level;
+        localStorage.setItem('spellingLevel', currentLevel);
+        
+        // Reset points counter for UI display if manually changing levels
+        // Note: This doesn't reset the actual points earned
+        
+        if (window.wordLists) {
+            assessmentWords = window.wordLists.getAssessmentWordsByLevel(currentLevel);
+            console.log(`Changed to level ${currentLevel} with ${assessmentWords.length} words`);
+        }
+        
+        updateLevelUI();
+        updateProgress(); // This will update the progress bar with correct level-specific progress
     }
 
     function preloadAudio() {
@@ -190,18 +378,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function completeAssessment() {
         if (feedback.assessment) {
-            const correctPercentage = (points / (assessmentWords.length * 10)) * 100;
+            const wordsCount = assessmentWords.length;
+            const correctPercentage = (points / (wordsCount * pointsConfig.baseAssessment * pointsConfig.levelMultipliers[currentLevel - 1])) * 100;
             
             if (correctPercentage >= 80) {
-                // Level up if they got 80% or better
-                currentLevel = Math.min(currentLevel + 1, 3); // Max level is 3
-                feedback.assessment.textContent = `Great job! You've advanced to Level ${currentLevel}!`;
-                
-                // Save level progress
-                localStorage.setItem('spellingLevel', currentLevel);
-                
-                // Update word lists for the new level
-                assessmentWords = window.wordLists.getAssessmentWordsByLevel(currentLevel);
+                checkLevelAdvancement();
+                feedback.assessment.textContent = `Great job! You've completed the assessment with ${Math.round(correctPercentage)}% accuracy.`;
             } else {
                 feedback.assessment.textContent = 'Assessment complete! Keep practicing to advance to the next level.';
             }
@@ -232,6 +414,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (points >= 30 && !badges.includes('Spelling Star')) {
                 badges.push('Spelling Star');
+                showNotification('New Badge: Spelling Star!', 'success');
                 updateProgress();
             }
             setTimeout(() => showSection('dashboard'), 2000);
@@ -240,7 +423,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // BUTTON EVENT HANDLERS
     
-    // Direct click handlers for main navigation buttons
+    // Direct click handlers for navigation buttons
     if (buttons.startAssessment) {
         buttons.startAssessment.onclick = function(event) {
             event.preventDefault();
@@ -277,7 +460,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
-    // Back buttons - use direct assignment for more reliable behavior
+    // Back buttons
     backButtons.forEach(button => {
         button.onclick = function(event) {
             event.preventDefault();
@@ -293,15 +476,26 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Submit Assessment clicked');
             const userAnswer = inputs.assessment.value.trim().toLowerCase();
             const correctAnswer = assessmentWords[currentWordIndex].word;
-            if (userAnswer === correctAnswer) {
-                points += 10;
-                feedback.assessment.textContent = 'Correct! +10 points';
+            const isCorrect = userAnswer === correctAnswer;
+            
+            if (isCorrect) {
+                const earnedPoints = calculatePoints(true, false);
+                points += earnedPoints;
+                feedback.assessment.textContent = `Correct! +${earnedPoints} points`;
                 feedback.assessment.className = 'feedback success';
+                
+                if (correctStreak >= 3) {
+                    feedback.assessment.textContent += ` (${correctStreak}x streak bonus!)`;
+                }
+                
                 updateProgress();
+                checkLevelAdvancement();
             } else {
                 feedback.assessment.textContent = `Wrong! The correct spelling is "${correctAnswer}".`;
                 feedback.assessment.className = 'feedback error';
+                correctStreak = 0;
             }
+            
             currentWordIndex++;
             setTimeout(loadAssessmentWord, 1500);
         };
@@ -313,15 +507,33 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Submit Game clicked');
             const userAnswer = inputs.game.value.trim().toLowerCase();
             const correctAnswer = gameWords[currentWordIndex].word;
-            if (userAnswer === correctAnswer) {
-                points += 15;
-                feedback.game.textContent = 'Correct! +15 points';
+            const isCorrect = userAnswer === correctAnswer;
+            
+            if (isCorrect) {
+                const earnedPoints = calculatePoints(true, true);
+                points += earnedPoints;
+                feedback.game.textContent = `Correct! +${earnedPoints} points`;
                 feedback.game.className = 'feedback success';
+                
+                if (correctStreak >= 3) {
+                    feedback.game.textContent += ` (${correctStreak}x streak bonus!)`;
+                }
+                
                 updateProgress();
                 buttons.nextWord.style.display = 'block';
+                
+                // Check for badges
+                if (points >= 50 && !badges.includes('Spelling Star')) {
+                    badges.push('Spelling Star');
+                    showNotification('New Badge: Spelling Star!', 'success');
+                    updateProgress();
+                }
+                
+                checkLevelAdvancement();
             } else {
                 feedback.game.textContent = `Wrong! The correct spelling is "${correctAnswer}".`;
                 feedback.game.className = 'feedback error';
+                correctStreak = 0;
             }
         };
     }
@@ -342,16 +554,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const highContrast = document.getElementById('highContrast').checked;
             const textSize = document.getElementById('textSize').value;
             
-            // Save settings in localStorage for persistence
             localStorage.setItem('highContrast', highContrast);
             localStorage.setItem('textSize', textSize);
             
-            // Apply settings
             document.body.classList.toggle('high-contrast', highContrast);
             document.body.classList.remove('text-small', 'text-medium', 'text-large');
             document.body.classList.add(`text-${textSize}`);
             
-            // Go back to dashboard
             showSection('dashboard');
         };
     }
@@ -416,6 +625,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Load settings from localStorage
     function loadSettings() {
+        // Load saved level
         const savedLevel = localStorage.getItem('spellingLevel');
         if (savedLevel) {
             currentLevel = parseInt(savedLevel);
@@ -424,6 +634,26 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
+        // Load saved points
+        const savedPoints = localStorage.getItem('spellingPoints');
+        if (savedPoints !== null) {
+            points = parseInt(savedPoints);
+        }
+        
+        // Load saved badges
+        const savedBadges = localStorage.getItem('spellingBadges');
+        if (savedBadges) {
+            try {
+                badges = JSON.parse(savedBadges);
+            } catch (e) {
+                console.error('Error parsing saved badges:', e);
+                badges = [];
+            }
+        }
+        
+        console.log('Loaded saved progress:', {level: currentLevel, points, badges});
+        
+        // Load visual preferences
         const savedContrast = localStorage.getItem('highContrast');
         const savedTextSize = localStorage.getItem('textSize');
         const highContrastToggle = document.getElementById('highContrast');
@@ -449,6 +679,47 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Make sure the default section is visible
     showSection('dashboard');
+    
+    // Add reset progress button to settings
+    const settingsCard = document.querySelector('.settings-card');
+    if (settingsCard) {
+        const resetDiv = document.createElement('div');
+        resetDiv.className = 'setting-option';
+        resetDiv.innerHTML = `
+            <button id="resetProgress" class="btn-secondary">
+                <i class="fas fa-undo"></i> Reset Progress
+            </button>
+            <div class="setting-label">Reset all points, badges, and level progress</div>
+        `;
+        settingsCard.appendChild(resetDiv);
+        
+        // Add event listener to reset button
+        const resetBtn = document.getElementById('resetProgress');
+        if (resetBtn) {
+            resetBtn.onclick = function(event) {
+                event.preventDefault();
+                
+                if (confirm('Are you sure you want to reset all progress? This cannot be undone.')) {
+                    // Reset points, badges, and level
+                    points = 0;
+                    badges = [];
+                    currentLevel = 1;
+                    
+                    // Update assessment words for level 1
+                    if (window.wordLists) {
+                        assessmentWords = window.wordLists.getAssessmentWordsByLevel(currentLevel);
+                    }
+                    
+                    // Save the reset state
+                    saveProgress();
+                    
+                    // Update UI
+                    updateProgress();
+                    showNotification('Progress has been reset', 'info');
+                }
+            };
+        }
+    }
 });
 
 // Add global access to the show section function for debugging
